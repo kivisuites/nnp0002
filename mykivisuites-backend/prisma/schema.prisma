@@ -1,0 +1,410 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Tenant {
+  id          Int      @id @default(autoincrement())
+  name        String
+  subdomain   String   @unique
+  createdAt   DateTime @default(now())
+  users       User[]
+  customers   Customer[]
+  suppliers   Supplier[]
+  products    Product[]
+  stock_transactions StockTransaction[]
+  journal_entries    JournalEntry[]
+  accounts           Account[]
+  addresses          Address[]
+  bank_accounts      BankAccount[]
+  bank_reconciliations BankReconciliation[]
+  bank_transactions    BankTransaction[]
+  customer_types       CustomerType[]
+  expenses             Expense[]
+  expense_categories   ExpenseCategory[]
+  general_ledger_entries GeneralLedgerEntry[]
+  invoices             Invoice[]
+  invoice_items        InvoiceItem[]
+  payment_methods      PaymentMethod[]
+  payment_terms        PaymentTerm[]
+  product_categories   ProductCategory[]
+  purchase_orders      PurchaseOrder[]
+  purchase_order_items PurchaseOrderItem[]
+  stock_movements      StockMovement[]
+  supplier_types       SupplierType[]
+  units                Unit[]
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  firstName String?
+  lastName  String?
+  role      String   @default("USER")
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  refreshTokens RefreshToken[]
+}
+
+model Customer {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String?
+  phone          String?
+  tenantId       Int
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  billingAddrId  Int?
+  billingAddr    Address? @relation("BillingAddress", fields: [billingAddrId], references: [id])
+  deliveryAddrId Int?
+  deliveryAddr   Address? @relation("DeliveryAddress", fields: [deliveryAddrId], references: [id])
+  customerTypeId Int?
+  customerType   CustomerType? @relation(fields: [customerTypeId], references: [id])
+  paymentMethodId Int?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentTermsId  Int?
+  paymentTerms    PaymentTerm? @relation(fields: [paymentTermsId], references: [id])
+  invoices       Invoice[]
+  deletedAt      DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model Supplier {
+  id             Int      @id @default(autoincrement())
+  name           String
+  email          String?
+  phone          String?
+  tenantId       Int
+  tenant         Tenant   @relation(fields: [tenantId], references: [id])
+  billingAddrId  Int?
+  billingAddr    Address? @relation("SupplierBillingAddress", fields: [billingAddrId], references: [id])
+  deliveryAddrId Int?
+  deliveryAddr   Address? @relation("SupplierDeliveryAddress", fields: [deliveryAddrId], references: [id])
+  supplierTypeId Int?
+  supplierType   SupplierType? @relation(fields: [supplierTypeId], references: [id])
+  paymentMethodId Int?
+  paymentMethod   PaymentMethod? @relation(fields: [paymentMethodId], references: [id])
+  paymentTermsId  Int?
+  paymentTerms    PaymentTerm? @relation(fields: [paymentTermsId], references: [id])
+  purchaseOrders  PurchaseOrder[]
+  deletedAt      DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model Product {
+  id          Int      @id @default(autoincrement())
+  name        String
+  sku         String
+  description String?
+  price       Decimal  @db.Decimal(18, 2)
+  cost        Decimal  @db.Decimal(18, 2)
+  stockLevel  Decimal  @db.Decimal(18, 2) @default(0)
+  reorderPoint Decimal @db.Decimal(18, 2) @default(0)
+  categoryId  Int?
+  category    ProductCategory? @relation(fields: [categoryId], references: [id])
+  unitId      Int
+  unit        Unit     @relation(fields: [unitId], references: [id])
+  tenantId    Int
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  invoiceItems InvoiceItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockMovements StockMovement[]
+  deletedAt   DateTime?
+
+  @@unique([id, tenantId])
+  @@unique([sku, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model StockTransaction {
+  id        Int      @id @default(autoincrement())
+  type      String
+  quantity  Decimal  @db.Decimal(18, 2)
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model JournalEntry {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  reference String?
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Account {
+  id               Int      @id @default(autoincrement())
+  name             String
+  code             String
+  type             String
+  parentAccountId  Int?
+  parentAccount    Account? @relation("ParentAccount", fields: [parentAccountId], references: [id])
+  subAccounts      Account[] @relation("ParentAccount")
+  tenantId         Int
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  generalLedgerEntries GeneralLedgerEntry[]
+
+  @@unique([id, tenantId])
+}
+
+model Address {
+  id        Int      @id @default(autoincrement())
+  street    String?
+  city      String?
+  state     String?
+  zip       String?
+  country   String?
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  billingCustomers Customer[] @relation("BillingAddress")
+  deliveryCustomers Customer[] @relation("DeliveryAddress")
+  billingSuppliers Supplier[] @relation("SupplierBillingAddress")
+  deliverySuppliers Supplier[] @relation("SupplierDeliveryAddress")
+
+  @@unique([id, tenantId])
+}
+
+model BankAccount {
+  id            Int      @id @default(autoincrement())
+  name          String
+  accountNumber String
+  bankName      String
+  balance       Decimal  @db.Decimal(18, 2) @default(0)
+  tenantId      Int
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  bankTransactions BankTransaction[]
+  bankReconciliations BankReconciliation[]
+  deletedAt     DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model BankReconciliation {
+  id            Int      @id @default(autoincrement())
+  bankAccountId Int
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
+  statementDate DateTime
+  endingBalance Decimal  @db.Decimal(18, 2)
+  status        String   @default("DRAFT")
+  tenantId      Int
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model BankTransaction {
+  id            Int      @id @default(autoincrement())
+  bankAccountId Int
+  bankAccount   BankAccount @relation(fields: [bankAccountId], references: [id])
+  date          DateTime
+  description   String
+  amount        Decimal  @db.Decimal(18, 2)
+  reference     String?
+  tenantId      Int
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  deletedAt     DateTime?
+
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model CustomerType {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  customers Customer[]
+
+  @@unique([id, tenantId])
+}
+
+model Expense {
+  id          Int      @id @default(autoincrement())
+  date        DateTime
+  amount      Decimal  @db.Decimal(18, 2)
+  description String?
+  categoryId  Int
+  category    ExpenseCategory @relation(fields: [categoryId], references: [id])
+  tenantId    Int
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  deletedAt   DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model ExpenseCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  expenses  Expense[]
+
+  @@unique([id, tenantId])
+}
+
+model GeneralLedgerEntry {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  accountId Int
+  account   Account  @relation(fields: [accountId], references: [id])
+  debit     Decimal  @db.Decimal(18, 2) @default(0)
+  credit    Decimal  @db.Decimal(18, 2) @default(0)
+  reference String?
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model Invoice {
+  id          Int      @id @default(autoincrement())
+  number      String
+  date        DateTime
+  dueDate     DateTime
+  customerId  Int
+  customer    Customer @relation(fields: [customerId], references: [id])
+  status      String   @default("DRAFT")
+  totalAmount Decimal  @db.Decimal(18, 2)
+  tenantId    Int
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  items       InvoiceItem[]
+  deletedAt   DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model InvoiceItem {
+  id        Int      @id @default(autoincrement())
+  invoiceId Int
+  invoice   Invoice  @relation(fields: [invoiceId], references: [id])
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Decimal  @db.Decimal(18, 2)
+  unitPrice Decimal  @db.Decimal(18, 2)
+  amount    Decimal  @db.Decimal(18, 2)
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model PaymentMethod {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  customers Customer[]
+  suppliers Supplier[]
+
+  @@unique([id, tenantId])
+}
+
+model PaymentTerm {
+  id        Int      @id @default(autoincrement())
+  name      String
+  days      Int
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  customers Customer[]
+  suppliers Supplier[]
+
+  @@unique([id, tenantId])
+}
+
+model ProductCategory {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  products  Product[]
+
+  @@unique([id, tenantId])
+}
+
+model PurchaseOrder {
+  id          Int      @id @default(autoincrement())
+  number      String
+  date        DateTime
+  supplierId  Int
+  supplier    Supplier @relation(fields: [supplierId], references: [id])
+  status      String   @default("DRAFT")
+  totalAmount Decimal  @db.Decimal(18, 2)
+  tenantId    Int
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  items       PurchaseOrderItem[]
+  deletedAt   DateTime?
+
+  @@unique([id, tenantId])
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model PurchaseOrderItem {
+  id              Int      @id @default(autoincrement())
+  purchaseOrderId Int
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       Int
+  product         Product  @relation(fields: [productId], references: [id])
+  quantity        Decimal  @db.Decimal(18, 2)
+  unitPrice       Decimal  @db.Decimal(18, 2)
+  amount          Decimal  @db.Decimal(18, 2)
+  tenantId        Int
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+}
+
+model RefreshToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  userId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model StockMovement {
+  id        Int      @id @default(autoincrement())
+  productId Int
+  product   Product  @relation(fields: [productId], references: [id])
+  quantity  Decimal  @db.Decimal(18, 2)
+  type      String   // IN, OUT
+  date      DateTime @default(now())
+  reference String?
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  deletedAt DateTime?
+
+  @@index([tenantId])
+  @@index([deletedAt])
+}
+
+model SupplierType {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  suppliers Supplier[]
+
+  @@unique([id, tenantId])
+}
+
+model Unit {
+  id        Int      @id @default(autoincrement())
+  name      String
+  tenantId  Int
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  products  Product[]
+
+  @@unique([id, tenantId])
+}

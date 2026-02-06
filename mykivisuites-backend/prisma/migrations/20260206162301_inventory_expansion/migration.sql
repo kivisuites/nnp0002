@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Product" ADD COLUMN     "reorderPoint" DECIMAL(18,2) NOT NULL DEFAULT 0,
+ADD COLUMN     "stockLevel" DECIMAL(18,2) NOT NULL DEFAULT 0;
