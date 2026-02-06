@@ -13,4 +13,9 @@ export class AppController {
   @Get('favicon.ico')
   @HttpCode(204)
   getFavicon() {}
+
+  @Get('health')
+  getHealth() {
+    return { status: 'ok', timestamp: new Date().toISOString() };
+  }
 }
