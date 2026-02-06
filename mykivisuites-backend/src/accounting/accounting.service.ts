@@ -1,12 +1,13 @@
 import { Injectable, BadRequestException } from "@nestjs/common";
 import { PrismaService } from "../prisma/prisma.service";
 import { CreateJournalEntryDto } from "./dto/create-journal-entry.dto";
+import { Prisma } from "@prisma/client";
 
 @Injectable()
 export class AccountingService {
 	constructor(private prisma: PrismaService) {}
 
-	async createJournalEntry(dto: CreateJournalEntryDto) {
+	async createJournalEntry(dto: CreateJournalEntryDto, tx?: any) {
 		const { date, reference, tenantId, entries } = dto;
 
 		// Validate that debits = credits
@@ -19,8 +20,8 @@ export class AccountingService {
 			);
 		}
 
-		return await (this.prisma as any).$transaction(async (tx: any) => {
-			const journalEntry = await tx.journalEntry.create({
+		const execute = async (transaction: any) => {
+			const journalEntry = await transaction.journalEntry.create({
 				data: {
 					date,
 					reference,
@@ -30,7 +31,7 @@ export class AccountingService {
 
 			const ledgerEntries = await Promise.all(
 				entries.map((entry) =>
-					tx.generalLedgerEntry.create({
+					transaction.generalLedgerEntry.create({
 						data: {
 							date,
 							accountId: entry.accountId,
@@ -44,11 +45,19 @@ export class AccountingService {
 			);
 
 			return { journalEntry, ledgerEntries };
-		});
+		};
+
+		if (tx) {
+			return execute(tx);
+		} else {
+			return await this.prisma.$transaction(async (newTx) => {
+				return execute(newTx);
+			});
+		}
 	}
 
 	async getAccountBalance(accountId: number, tenantId: number) {
-		const entries = await (this.prisma as any).generalLedgerEntry.findMany({
+		const entries = await this.prisma.generalLedgerEntry.findMany({
 			where: {
 				accountId,
 				tenantId,
