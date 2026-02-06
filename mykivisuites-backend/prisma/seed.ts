@@ -64,7 +64,7 @@ async function main() {
 		{ name: "Accounts Payable", code: "2000", type: "LIABILITY" as const },
 	];
 
-	const accounts = [];
+	const accounts: any[] = [];
 	for (const acc of defaultAccounts) {
 		const account = await (prisma as any).account.upsert({
 			where: { code: acc.code },
