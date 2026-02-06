@@ -5,7 +5,7 @@
     "dockerfilePath": "Dockerfile"
   },
   "deploy": {
-    "startCommand": "echo 'Testing DB connection...' && npx prisma migrate deploy && npx prisma db seed && npm run start:prod",
+    "startCommand": "echo 'Waiting for DB...' && sleep 5 && npx prisma migrate deploy && npx prisma db seed && npm run start:prod",
     "healthcheckPath": "/health",
     "restartPolicyType": "ON_FAILURE"
   }
