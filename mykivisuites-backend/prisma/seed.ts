@@ -37,88 +37,90 @@ async function main() {
 	});
 
 	// Create some sample customers
-	await prisma.customer.createMany({
-		data: [
-			{ name: "John Doe", email: "john@example.com", tenantId: tenant.id },
-			{ name: "Jane Smith", email: "jane@example.com", tenantId: tenant.id },
-		],
-	});
+	const customerEmails = ["john@example.com", "jane@example.com"];
+	for (const email of customerEmails) {
+		await prisma.customer.upsert({
+			where: { email },
+			update: {},
+			create: {
+				name: email === "john@example.com" ? "John Doe" : "Jane Smith",
+				email,
+				tenantId: tenant.id,
+			},
+		});
+	}
 
 	// Create default units
-	const unitPcs = await prisma.unit.create({
-		data: {
+	const unitPcs = await prisma.unit.upsert({
+		where: { id: 1 }, // Assuming ID 1 for simplicity in seed
+		update: {},
+		create: {
 			name: "Pcs",
 			tenantId: tenant.id,
 		},
 	});
 
 	// Create default accounts
-	const accounts = await Promise.all([
-		prisma.account.create({
-			data: {
-				name: "Accounts Receivable",
-				code: "1200",
-				type: "ASSET",
+	const defaultAccounts = [
+		{ name: "Accounts Receivable", code: "1200", type: "ASSET" },
+		{ name: "Sales Revenue", code: "4000", type: "REVENUE" },
+		{ name: "Inventory", code: "1400", type: "ASSET" },
+		{ name: "Cost of Goods Sold", code: "5000", type: "EXPENSE" },
+		{ name: "Accounts Payable", code: "2000", type: "LIABILITY" },
+	];
+
+	const accounts = [];
+	for (const acc of defaultAccounts) {
+		const account = await prisma.account.upsert({
+			where: { code: acc.code },
+			update: {},
+			create: {
+				name: acc.name,
+				code: acc.code,
+				type: acc.type as any,
 				tenantId: tenant.id,
 			},
-		}),
-		prisma.account.create({
-			data: {
-				name: "Sales Revenue",
-				code: "4000",
-				type: "REVENUE",
-				tenantId: tenant.id,
-			},
-		}),
-		prisma.account.create({
-			data: {
-				name: "Inventory",
-				code: "1400",
-				type: "ASSET",
-				tenantId: tenant.id,
-			},
-		}),
-		prisma.account.create({
-			data: {
-				name: "Cost of Goods Sold",
-				code: "5000",
-				type: "EXPENSE",
-				tenantId: tenant.id,
-			},
-		}),
-		prisma.account.create({
-			data: {
-				name: "Accounts Payable",
-				code: "2000",
-				type: "LIABILITY",
-				tenantId: tenant.id,
-			},
-		}),
-	]);
+		});
+		accounts.push(account);
+	}
 
 	// Create sample products
-	await prisma.product.createMany({
-		data: [
-			{
-				name: "Laptop",
-				sku: "LAP-001",
-				price: 1200,
-				cost: 800,
-				unitId: unitPcs.id,
-				tenantId: tenant.id,
-				stockLevel: 10,
+	const sampleProducts = [
+		{
+			name: "Laptop",
+			sku: "LAP-001",
+			price: 1200,
+			cost: 800,
+			unitId: unitPcs.id,
+			tenantId: tenant.id,
+			stockLevel: 10,
+		},
+		{
+			name: "Mouse",
+			sku: "MOU-001",
+			price: 25,
+			cost: 15,
+			unitId: unitPcs.id,
+			tenantId: tenant.id,
+			stockLevel: 50,
+		},
+	];
+
+	for (const prod of sampleProducts) {
+		await prisma.product.upsert({
+			where: { sku_tenantId: { sku: prod.sku, tenantId: prod.tenantId } },
+			update: {},
+			create: {
+				name: prod.name,
+				sku: prod.sku,
+				price: prod.price,
+				cost: prod.cost,
+				unitId: prod.unitId,
+				tenantId: prod.tenantId,
+				stockLevel: prod.stockLevel,
 			},
-			{
-				name: "Mouse",
-				sku: "MOU-001",
-				price: 25,
-				cost: 15,
-				unitId: unitPcs.id,
-				tenantId: tenant.id,
-				stockLevel: 50,
-			},
-		],
-	});
+		});
+	}
 
 	console.log({ tenant, admin, unitPcs, accountsCount: accounts.length });
 }
