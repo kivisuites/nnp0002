@@ -35,7 +35,7 @@ COPY --from=builder /app/start.sh ./start.sh
 RUN chmod +x ./start.sh
 
 # Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=5 \
   CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Railway uses the PORT environment variable
