@@ -10,6 +10,20 @@ on:
     - cron: "30 1 * * *"
 
 jobs:
+  check-secrets:
+    name: Check Secrets
+    runs-on: ubuntu-latest
+    outputs:
+      railway-token-exists: ${{ steps.check.outputs.railway-token-exists }}
+    steps:
+      - id: check
+        run: |
+          if [ -n "${{ secrets.RAILWAY_TOKEN }}" ]; then
+            echo "railway-token-exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "railway-token-exists=false" >> $GITHUB_OUTPUT
+          fi
+
   backend-ci:
     name: Backend CI
     runs-on: ubuntu-latest
@@ -100,8 +114,11 @@ jobs:
   deploy-backend-railway:
     name: Deploy Backend to Railway
     runs-on: ubuntu-latest
-    needs: backend-ci
-    if: (github.ref == 'refs/heads/backend_railway' || github.ref == 'refs/heads/main') && github.event_name == 'push'
+    needs: [backend-ci, check-secrets]
+    if: |
+      needs.check-secrets.outputs.railway-token-exists == 'true' &&
+      (github.ref == 'refs/heads/backend_railway' || github.ref == 'refs/heads/main') &&
+      github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -113,7 +130,12 @@ jobs:
           path: downloaded-backend
 
       - name: Verify Backend Artifact
-        run: cat downloaded-backend/backend-status.txt
+        run: |
+          if [ ! -f downloaded-backend/backend-status.txt ]; then
+            echo "::error::Backend artifact not found or incomplete"
+            exit 1
+          fi
+          cat downloaded-backend/backend-status.txt
 
       - name: Deploy to Railway
         run: |
@@ -122,11 +144,18 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
+      - name: Deployment Status
+        if: always()
+        run: echo "::notice::Backend deployment completed. Check Railway dashboard for status."
+
   deploy-frontend-railway:
     name: Deploy Frontend to Railway
     runs-on: ubuntu-latest
-    needs: [frontend-ci, backend-ci]
-    if: (github.ref == 'refs/heads/frontend_railway' || github.ref == 'refs/heads/main') && github.event_name == 'push'
+    needs: [frontend-ci, check-secrets]
+    if: |
+      needs.check-secrets.outputs.railway-token-exists == 'true' &&
+      (github.ref == 'refs/heads/frontend_railway' || github.ref == 'refs/heads/main') &&
+      github.event_name == 'push'
 
     steps:
       - uses: actions/checkout@v4
@@ -138,7 +167,12 @@ jobs:
           path: downloaded-frontend
 
       - name: Verify Frontend Artifact
-        run: cat downloaded-frontend/frontend-status.txt
+        run: |
+          if [ ! -f downloaded-frontend/frontend-status.txt ]; then
+            echo "::error::Frontend artifact not found or incomplete"
+            exit 1
+          fi
+          cat downloaded-frontend/frontend-status.txt
 
       - name: Deploy to Railway
         run: |
@@ -146,12 +180,17 @@ jobs:
           railway up --service mykivisuites --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL || '${{mykivisuites-backend.RAILWAY_PRIVATE_DOMAIN}}' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3001/api' }}
           PORT: "3000"
+
+      - name: Deployment Status
+        if: always()
+        run: echo "::notice::Frontend deployment completed. Check Railway dashboard for status."
 
   maintenance:
     name: Close Stale Issues
     runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
     permissions:
       issues: write
       pull-requests: write
