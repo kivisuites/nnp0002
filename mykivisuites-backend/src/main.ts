@@ -2,9 +2,14 @@ import "dotenv/config";
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
+import { corsOptions } from "./config/cors.config";
+import { NestExpressApplication } from "@nestjs/platform-express";
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule);
+	const app = await NestFactory.create<NestExpressApplication>(AppModule);
+
+	// Trust proxy - essential for Railway/behind reverse proxies
+	app.set("trust proxy", 1);
 
 	// Enable validation globally
 	app.useGlobalPipes(
@@ -15,19 +20,8 @@ async function bootstrap() {
 		}),
 	);
 
-	// CORS Configuration for Production
-	app.enableCors({
-		origin: [
-			process.env.FRONTEND_URL ||
-				"https://mykivisuites-production.up.railway.app",
-			"https://mykivisuites.com",
-			"http://localhost:5173",
-			"http://localhost:3001",
-			"http://localhost:3000",
-		],
-		methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
-		credentials: true,
-	});
+	// CORS Configuration
+	app.enableCors(corsOptions);
 
 	// Use the port provided by Railway (or fallback to 3000)
 	const port = Number(process.env.PORT) || 3000;

@@ -12,12 +12,15 @@ if (!connectionString) {
 }
 
 console.log("🌱 Connecting to database for seeding...");
+console.log("Database URL present:", !!connectionString);
 const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+	console.log("🚀 Starting seed function...");
 	const hashedPassword = await bcrypt.hash("admin123", 10);
+	console.log("✅ Password hashed");
 
 	// Create default tenant
 	const tenant = await prisma.tenant.upsert({
@@ -44,7 +47,7 @@ async function main() {
 	});
 
 	// Create default units
-	const unitPcs = await prisma.unit.upsert({
+	await prisma.unit.upsert({
 		where: {
 			tenantId_name: {
 				tenantId: tenant.id,
