@@ -36,4 +36,4 @@ EXPOSE 3000
 
 # Command to run the application
 # We use a shell to expand the PORT variable provided by Railway
-CMD serve -s dist -l tcp://0.0.0.0:${PORT:-3000}
+CMD ["sh", "-c", "serve -s dist -l ${PORT:-3000}"]
