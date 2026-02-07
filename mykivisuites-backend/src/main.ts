@@ -21,6 +21,9 @@ async function bootstrap() {
 			process.env.FRONTEND_URL ||
 				"https://mykivisuites-production.up.railway.app",
 			"https://mykivisuites.com",
+			"http://localhost:5173",
+			"http://localhost:3001",
+			"http://localhost:3000",
 		],
 		methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
 		credentials: true,

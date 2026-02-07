@@ -4,14 +4,19 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import * as bcrypt from "bcryptjs";
 
-const connectionString =
-	process.env.DATABASE_URL ||
-	"postgresql://postgres:NWHZGiLBKzyIoDkaHMWjceBVQHULLQlR@postgres.railway.internal:5432/railway";
-console.log("Connecting to database...");
+const connectionString = process.env.DATABASE_URL;
 
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-const prisma = new PrismaClient({ adapter });
+let prisma: PrismaClient;
+
+if (!connectionString) {
+	prisma = new PrismaClient();
+	console.log("No DATABASE_URL found, using default PrismaClient");
+} else {
+	console.log("Connecting to database with adapter...");
+	const pool = new Pool({ connectionString });
+	const adapter = new PrismaPg(pool);
+	prisma = new PrismaClient({ adapter });
+}
 
 async function main() {
 	const hashedPassword = await bcrypt.hash("admin123", 10);
