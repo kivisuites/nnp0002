@@ -410,5 +410,6 @@ model Unit {
   tenant    Tenant   @relation(fields: [tenantId], references: [id])
   products  Product[]
 
+  @@unique([name, tenantId], name: "tenantId_name")
   @@unique([id, tenantId])
 }

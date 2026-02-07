@@ -18,11 +18,14 @@
  echo "✅ PORT: ${PORT:-3000}"
 
  # Run migrations
- echo "🔄 Running database migrations..."
- npx prisma migrate deploy || {
-   echo "⚠️ Migration failed, trying to reset..."
-   npx prisma migrate reset --force || echo "❌ Migration reset failed"
- }
+echo "🔄 Running database migrations..."
+npx prisma migrate deploy || {
+  echo "⚠️ Migration failed, trying to reset..."
+  npx prisma migrate reset --force || {
+    echo "⚠️ Reset failed, trying db push as last resort..."
+    npx prisma db push --skip-generate
+  }
+}
 
  # Generate Prisma Client
  echo "🔧 Generating Prisma Client..."
