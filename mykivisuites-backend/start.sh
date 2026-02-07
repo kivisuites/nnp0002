@@ -62,12 +62,12 @@ echo "PORT is set to: ${PORT:-3000}"
 echo "APP_ENV is: ${APP_ENV:-not set}"
 echo "--------------------------------"
 
-# Run migrations before starting the app
+# Run migrations and seed before starting the app
 echo "Running database migrations..."
-# Increase memory limit for prisma if needed and run migration
-# We don't use & here to ensure migrations finish before app starts,
-# but we wrap in a subshell with a timeout if desired.
-npx prisma migrate deploy || echo "WARNING: Migration failed, check logs. Starting app anyway..."
+npx prisma migrate deploy || echo "WARNING: Migration failed, check logs. Continuing..."
+
+echo "Running database seed..."
+npx prisma db seed || echo "WARNING: Seeding failed, check logs. Continuing..."
 
 # Start the application
 echo "Starting NestJS application..."
