@@ -8,8 +8,16 @@ import {
 import { type BaseRecord } from "@refinedev/core";
 import { Table, Space } from "antd";
 
+// Define your customer type
+interface Customer {
+  id: string | number;
+  name: string;
+  email: string;
+  phone: string;
+}
+
 export const CustomerList = () => {
-  const { tableProps } = useTable({
+  const { tableProps } = useTable<Customer>({
     syncWithLocation: true,
   });
 

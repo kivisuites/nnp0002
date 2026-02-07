@@ -8,8 +8,17 @@ import {
 import { type BaseRecord } from "@refinedev/core";
 import { Table, Space } from "antd";
 
+// Define your product type
+interface Product {
+  id: string | number;
+  name: string;
+  sku: string;
+  price: number;
+  stockLevel: number;
+}
+
 export const ProductList = () => {
-  const { tableProps } = useTable({
+  const { tableProps } = useTable<Product>({
     syncWithLocation: true,
   });
 
