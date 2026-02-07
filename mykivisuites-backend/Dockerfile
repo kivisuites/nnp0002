@@ -5,6 +5,7 @@ WORKDIR /app
 
 COPY package*.json ./
 COPY prisma ./prisma/
+COPY start.sh ./
 
 RUN npm ci
 RUN npx prisma generate
@@ -22,7 +23,8 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.js ./
+COPY start.sh ./
 
 EXPOSE 3000
 
-CMD ["npm", "run", "start:prod"]
+CMD ["./start.sh"]
