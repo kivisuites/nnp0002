@@ -119,6 +119,7 @@ jobs:
         run: |
           npm i -g @railway/cli
           railway up --service mykivisuites-backend --detach
+        working-directory: mykivisuites-backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -144,6 +145,7 @@ jobs:
         run: |
           npm i -g @railway/cli
           railway up --service mykivisuites --detach
+        working-directory: mykivisuites
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || '${{mykivisuites-backend.RAILWAY_PRIVATE_DOMAIN}}' }}
