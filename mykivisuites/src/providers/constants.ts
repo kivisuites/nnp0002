@@ -1,2 +1,3 @@
 export const API_URL =
-	import.meta.env.VITE_API_URL || "https://api.mykivisuites.com";
+	import.meta.env.VITE_API_URL ||
+	"https://mykivisuites-backend-production.up.railway.app";

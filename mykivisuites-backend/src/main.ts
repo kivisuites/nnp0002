@@ -17,7 +17,11 @@ async function bootstrap() {
 
 	// CORS Configuration for Production
 	app.enableCors({
-		origin: process.env.FRONTEND_URL || "https://mykivisuites.com",
+		origin: [
+			process.env.FRONTEND_URL ||
+				"https://mykivisuites-production.up.railway.app",
+			"https://mykivisuites.com",
+		],
 		methods: "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
 		credentials: true,
 	});
