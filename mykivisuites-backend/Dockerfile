@@ -3,13 +3,15 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Install dependencies
 COPY package*.json ./
 COPY prisma ./prisma/
-COPY start.sh ./
-
 RUN npm ci
+
+# Generate Prisma Client
 RUN npx prisma generate
 
+# Copy source and build
 COPY . .
 RUN npm run build
 
@@ -18,21 +20,26 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-# Install dependencies for health check and runtime if needed
-RUN apk add --no-cache curl
+# Install runtime dependencies
+RUN apk add --no-cache bash curl
 
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
+# Copy from builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.js ./
-COPY start.sh ./
+COPY --from=builder /app/start.sh ./start.sh
 
-# Ensure start.sh is executable
-RUN chmod +x start.sh
+# Make scripts executable
+RUN chmod +x ./start.sh
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:${PORT:-3000}/health || exit 1
 
 # Railway uses the PORT environment variable
 ENV PORT=3000
 EXPOSE 3000
 
+# Start application
 CMD ["./start.sh"]

@@ -71,6 +71,7 @@ model Customer {
   invoices       Invoice[]
   deletedAt      DateTime?
 
+  @@unique([email, tenantId], name: "tenantId_email")
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([deletedAt])
@@ -96,6 +97,7 @@ model Supplier {
   purchaseOrders  PurchaseOrder[]
   deletedAt      DateTime?
 
+  @@unique([email, tenantId], name: "supplier_tenantId_email")
   @@unique([id, tenantId])
   @@index([tenantId])
   @@index([deletedAt])
@@ -121,8 +123,8 @@ model Product {
   stockMovements StockMovement[]
   deletedAt   DateTime?
 
+  @@unique([sku, tenantId], name: "tenantId_sku")
   @@unique([id, tenantId])
-  @@unique([sku, tenantId])
   @@index([tenantId])
   @@index([deletedAt])
 }
@@ -155,6 +157,7 @@ model Account {
   tenant           Tenant   @relation(fields: [tenantId], references: [id])
   generalLedgerEntries GeneralLedgerEntry[]
 
+  @@unique([code, tenantId], name: "tenantId_code")
   @@unique([id, tenantId])
 }
 
