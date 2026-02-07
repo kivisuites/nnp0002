@@ -1,22 +1,20 @@
 import "dotenv/config";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";
 import * as bcrypt from "bcryptjs";
 
 const connectionString = process.env.DATABASE_URL;
 
-let prisma: PrismaClient;
-
 if (!connectionString) {
-	prisma = new PrismaClient();
-	console.log("No DATABASE_URL found, using default PrismaClient");
-} else {
-	console.log("Connecting to database with adapter...");
-	const pool = new Pool({ connectionString });
-	const adapter = new PrismaPg(pool);
-	prisma = new PrismaClient({ adapter });
+	console.error("❌ DATABASE_URL is not set for seeding.");
+	process.exit(1);
 }
+
+console.log("🌱 Connecting to database for seeding...");
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
 	const hashedPassword = await bcrypt.hash("admin123", 10);
@@ -110,47 +108,12 @@ async function main() {
 		});
 	}
 
-	// Create sample products
-	const sampleProducts = [
-		{
-			name: "Laptop",
-			sku: "LAP-001",
-			price: new Prisma.Decimal(1200),
-			cost: new Prisma.Decimal(800),
-			unitId: unitPcs.id,
-			tenantId: tenant.id,
-			stockLevel: new Prisma.Decimal(10),
-		},
-		{
-			name: "Mouse",
-			sku: "MOU-001",
-			price: new Prisma.Decimal(25),
-			cost: new Prisma.Decimal(15),
-			unitId: unitPcs.id,
-			tenantId: tenant.id,
-			stockLevel: new Prisma.Decimal(50),
-		},
-	];
-
-	for (const product of sampleProducts) {
-		await prisma.product.upsert({
-			where: {
-				tenantId_sku: {
-					tenantId: tenant.id,
-					sku: product.sku,
-				},
-			} as any,
-			update: {},
-			create: product,
-		});
-	}
-
 	console.log("✅ Seed completed successfully");
 }
 
 main()
 	.catch((e) => {
-		console.error("❌ Seed failed:", e);
+		console.error("❌ Seed error:", e);
 		process.exit(1);
 	})
 	.finally(async () => {
