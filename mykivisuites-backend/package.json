@@ -29,6 +29,8 @@
     "db:reset": "prisma migrate reset --force"
   },
   "dependencies": {
+    "@nest-lab/throttler-storage-redis": "^1.2.0",
+    "@nestjs/cache-manager": "^3.1.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/core": "^11.0.1",
     "@nestjs/jwt": "^11.0.2",
@@ -39,14 +41,15 @@
     "@prisma/adapter-pg": "^7.3.0",
     "@prisma/client": "^7.3.0",
     "bcryptjs": "^3.0.3",
+    "cache-manager": "^7.2.8",
+    "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
+    "ioredis": "^5.4.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.18.0",
     "redis": "^4.7.0",
-    "ioredis": "^5.4.1",
-    "@nest-lab/throttler-storage-redis": "^1.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
