@@ -12,6 +12,12 @@ if [ ! -z "$DATABASE_URL" ]; then
 fi
 
 # Check if DATABASE_URL is set and valid
+echo "DB URL is set: ${DATABASE_URL:+Yes (masked)}"
+if [ -z "$DATABASE_URL" ]; then
+  echo "CRITICAL: DATABASE_URL is EMPTY!"
+  exit 1
+fi
+
 VALID_URL=false
 case "$DATABASE_URL" in
   postgresql://*|postgres://*) VALID_URL=true ;;

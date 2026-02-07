@@ -2,6 +2,23 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcryptjs';
+import { RegisterDto } from './dto/register.dto';
+
+export interface Tenant {
+  id: number;
+  name: string;
+  subdomain: string;
+}
+
+export interface UserPayload {
+  email: string;
+  id: number;
+  tenantId: number;
+  role: string;
+  firstName?: string;
+  lastName?: string;
+  tenant?: Tenant;
+}
 
 @Injectable()
 export class AuthService {
@@ -10,20 +27,21 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async validateUser(email: string, pass: string): Promise<any> {
-    const user = await (this.prisma as any).user.findUnique({
+  async validateUser(email: string, pass: string): Promise<UserPayload | null> {
+    const user = await this.prisma.user.findUnique({
       where: { email },
       include: { tenant: true },
     });
 
     if (user && (await bcrypt.compare(pass, user.password))) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
-      return result;
+      return result as unknown as UserPayload;
     }
     return null;
   }
 
-  async login(user: any) {
+  login(user: UserPayload) {
     const payload = {
       email: user.email,
       sub: user.id,
@@ -43,17 +61,17 @@ export class AuthService {
     };
   }
 
-  async register(data: any) {
+  async register(data: RegisterDto) {
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
     // Check if tenant exists or create one
-    let tenant: any;
+    let tenant: Tenant | null;
     if (data.tenantId) {
-      tenant = await (this.prisma as any).tenant.findUnique({
+      tenant = await this.prisma.tenant.findUnique({
         where: { id: data.tenantId },
       });
     } else {
-      tenant = await (this.prisma as any).tenant.create({
+      tenant = await this.prisma.tenant.create({
         data: {
           name: data.tenantName || 'Default Tenant',
           subdomain: data.subdomain || `tenant-${Date.now()}`,
@@ -61,8 +79,12 @@ export class AuthService {
       });
     }
 
+    if (!tenant) {
+      throw new ConflictException('Tenant not found');
+    }
+
     try {
-      const user = await (this.prisma as any).user.create({
+      const user = await this.prisma.user.create({
         data: {
           email: data.email,
           password: hashedPassword,
@@ -74,11 +96,13 @@ export class AuthService {
         include: { tenant: true },
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...result } = user;
-      return result;
-    } catch (error: any) {
-      if (error.code === 'P2002') {
-        throw new ConflictException('Email already exists');
+      return result as unknown as UserPayload;
+    } catch (error: unknown) {
+      const prismaError = error as { code?: string };
+      if (prismaError.code === 'P2002') {
+        throw new ConflictException('Email or subdomain already exists');
       }
       throw error;
     }

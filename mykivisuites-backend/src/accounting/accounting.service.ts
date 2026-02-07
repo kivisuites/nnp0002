@@ -7,7 +7,10 @@ import { Prisma } from '@prisma/client';
 export class AccountingService {
   constructor(private prisma: PrismaService) {}
 
-  async createJournalEntry(dto: CreateJournalEntryDto, tx?: any) {
+  async createJournalEntry(
+    dto: CreateJournalEntryDto,
+    tx?: Prisma.TransactionClient,
+  ) {
     const { date, reference, tenantId, entries } = dto;
 
     // Validate that debits = credits
@@ -20,7 +23,7 @@ export class AccountingService {
       );
     }
 
-    const execute = async (transaction: any) => {
+    const execute = async (transaction: Prisma.TransactionClient) => {
       const journalEntry = await transaction.journalEntry.create({
         data: {
           date,
@@ -65,8 +68,7 @@ export class AccountingService {
     });
 
     const balance = entries.reduce(
-      (sum: number, entry: any) =>
-        sum + Number(entry.debit) - Number(entry.credit),
+      (sum: number, entry) => sum + Number(entry.debit) - Number(entry.credit),
       0,
     );
 

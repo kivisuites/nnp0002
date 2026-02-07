@@ -26,13 +26,17 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   const host = process.env.APP_HOST || '0.0.0.0';
 
-  console.log(`Application Environment: ${process.env.APP_ENV || 'development'}`);
+  console.log(
+    `Application Environment: ${process.env.APP_ENV || 'development'}`,
+  );
   console.log(`Starting NestJS on port: ${port}...`);
   console.log(`Binding to host: ${host}`);
 
   await app.listen(port, host);
-  
-  console.log(`Application is successfully listening on http://${host}:${port}`);
+
+  console.log(
+    `Application is successfully listening on http://${host}:${port}`,
+  );
 }
 
 bootstrap().catch((err) => {

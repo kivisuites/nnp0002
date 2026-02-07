@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis';
+import Redis from 'ioredis';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CustomersModule } from './customers/customers.module';
@@ -11,11 +13,23 @@ import { PurchasesModule } from './purchases/purchases.module';
 
 @Module({
   imports: [
-    // Rate Limiting (Throttling) Configuration
-    ThrottlerModule.forRoot([{
-      ttl: parseInt(process.env.APP_THROTTLE_TTL || '60', 10),
-      limit: parseInt(process.env.APP_THROTTLE_LIMIT || '10', 10),
-    }]),
+    // Rate Limiting (Throttling) Configuration with Redis
+    ThrottlerModule.forRootAsync({
+      useFactory: () => {
+        const redisUrl = process.env.REDIS_URL;
+        return {
+          throttlers: [
+            {
+              ttl: parseInt(process.env.APP_THROTTLE_TTL || '60', 10),
+              limit: parseInt(process.env.APP_THROTTLE_LIMIT || '10', 10),
+            },
+          ],
+          storage: redisUrl
+            ? new ThrottlerStorageRedisService(new Redis(redisUrl))
+            : undefined,
+        };
+      },
+    }),
     CustomersModule,
     PrismaModule,
     AuthModule,

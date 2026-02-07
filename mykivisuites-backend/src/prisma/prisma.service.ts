@@ -22,7 +22,7 @@ export class PrismaService
     } else {
       const pool = new Pool({ connectionString });
       const adapter = new PrismaPg(pool);
-      super({ adapter } as any);
+      super({ adapter });
       this.pool = pool;
 
       this.pool.on('error', (err) => {
@@ -61,7 +61,7 @@ export class PrismaService
           `PrismaService: Connection failed (Attempt ${currentRetry}/${maxRetries}):`,
           error instanceof Error ? error.message : error,
         );
-        
+
         if (currentRetry < maxRetries) {
           console.log(`Retrying in ${retryDelay / 1000}s...`);
           await new Promise((resolve) => setTimeout(resolve, retryDelay));
@@ -69,7 +69,9 @@ export class PrismaService
       }
     }
 
-    console.error('PrismaService: Could not connect to database after maximum retries.');
+    console.error(
+      'PrismaService: Could not connect to database after maximum retries.',
+    );
     // We don't throw to allow the health check to pass, but the app will be in a degraded state
   }
 
