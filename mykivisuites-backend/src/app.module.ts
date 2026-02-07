@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { CustomersModule } from './customers/customers.module';
@@ -10,6 +11,11 @@ import { PurchasesModule } from './purchases/purchases.module';
 
 @Module({
   imports: [
+    // Rate Limiting (Throttling) Configuration
+    ThrottlerModule.forRoot([{
+      ttl: parseInt(process.env.APP_THROTTLE_TTL || '60', 10),
+      limit: parseInt(process.env.APP_THROTTLE_LIMIT || '10', 10),
+    }]),
     CustomersModule,
     PrismaModule,
     AuthModule,
