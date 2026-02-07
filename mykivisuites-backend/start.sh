@@ -14,7 +14,7 @@
    exit 1
  fi
 
- echo "✅ DATABASE_URL is set"
+ echo "✅ DATABASE_URL is set (masked: $(echo $DATABASE_URL | sed 's/:.*@/:****@/'))"
  echo "✅ PORT: ${PORT:-3000}"
 
  # Run migrations
@@ -23,7 +23,7 @@ npx prisma migrate deploy || {
   echo "⚠️ Migration failed, trying to reset..."
   npx prisma migrate reset --force || {
     echo "⚠️ Reset failed, trying db push as last resort..."
-    npx prisma db push --skip-generate
+    npx prisma db push
   }
 }
 
