@@ -104,19 +104,18 @@ async function main() {
 			} as any,
 			update: {},
 			create: {
-				name: customer.name,
-				email: customer.email,
+				...customer,
 				tenantId: tenant.id,
 			},
 		});
 	}
 
-	console.log("✅ Seed completed successfully");
+	console.log("✅ Seeding completed successfully");
 }
 
 main()
 	.catch((e) => {
-		console.error("❌ Seed error:", e);
+		console.error("❌ Error during seeding:", e);
 		process.exit(1);
 	})
 	.finally(async () => {
