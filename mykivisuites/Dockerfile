@@ -7,11 +7,15 @@ WORKDIR /app
 COPY package*.json ./
 COPY .npmrc* ./
 
-# Install dependencies
-RUN npm install
+# Install dependencies using npm ci for deterministic builds
+RUN npm ci
 
 # Copy the rest of the application code
 COPY . .
+
+# Build-time environment variables
+ARG VITE_API_URL
+ENV VITE_API_URL=$VITE_API_URL
 
 # Build the application
 RUN npm run build

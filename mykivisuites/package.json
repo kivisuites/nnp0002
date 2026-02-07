@@ -38,6 +38,7 @@
     "dev": "refine dev",
     "build": "tsc && refine build",
     "start": "refine start",
+    "lint": "eslint \"src/**/*.{ts,tsx}\" --fix",
     "refine": "refine"
   },
   "browserslist": {

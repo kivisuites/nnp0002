@@ -5,6 +5,7 @@ import {
   ShowButton,
   DeleteButton,
 } from "@refinedev/antd";
+import { type BaseRecord } from "@refinedev/core";
 import { Table, Space } from "antd";
 
 export const CustomerList = () => {
@@ -22,7 +23,7 @@ export const CustomerList = () => {
         <Table.Column
           title="Actions"
           dataIndex="actions"
-          render={(_, record: any) => (
+          render={(_, record: BaseRecord) => (
             <Space>
               <EditButton hideText size="small" recordItemId={record.id} />
               <ShowButton hideText size="small" recordItemId={record.id} />
