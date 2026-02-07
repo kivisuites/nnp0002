@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { PrismaClient } from "@prisma/client";
-import * as bcrypt from "bcrypt";
+import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
@@ -18,7 +18,7 @@ async function main() {
 	});
 
 	// Create admin user
-	const admin = await (prisma as any).user.upsert({
+	await (prisma as any).user.upsert({
 		where: { email: "admin@kivisuites.com" },
 		update: {},
 		create: {
@@ -64,9 +64,8 @@ async function main() {
 		{ name: "Accounts Payable", code: "2000", type: "LIABILITY" as const },
 	];
 
-	const accounts: any[] = [];
 	for (const acc of defaultAccounts) {
-		const account = await (prisma as any).account.upsert({
+		await (prisma as any).account.upsert({
 			where: { code: acc.code },
 			update: {},
 			create: {
@@ -76,7 +75,6 @@ async function main() {
 				tenantId: tenant.id,
 			},
 		});
-		accounts.push(account);
 	}
 
 	// Create sample products
@@ -101,23 +99,15 @@ async function main() {
 		},
 	];
 
-	for (const prod of sampleProducts) {
+	for (const product of sampleProducts) {
 		await (prisma as any).product.upsert({
-			where: { sku_tenantId: { sku: prod.sku, tenantId: prod.tenantId } },
+			where: { sku: product.sku },
 			update: {},
-			create: {
-				name: prod.name,
-				sku: prod.sku,
-				price: prod.price,
-				cost: prod.cost,
-				unitId: prod.unitId,
-				tenantId: prod.tenantId,
-				stockLevel: prod.stockLevel,
-			},
+			create: product,
 		});
 	}
 
-	console.log({ tenant, admin, unitPcs, accountsCount: accounts.length });
+	console.log("Seed completed successfully");
 }
 
 main()

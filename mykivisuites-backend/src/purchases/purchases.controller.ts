@@ -8,8 +8,8 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 export class PurchasesController {
   constructor(private readonly purchasesService: PurchasesService) {}
 
-  @Post('orders')
-  createPurchaseOrder(@Body() createPurchaseOrderDto: CreatePurchaseOrderDto) {
+  @Post()
+  create(@Body() createPurchaseOrderDto: CreatePurchaseOrderDto) {
     return this.purchasesService.createPurchaseOrder(createPurchaseOrderDto);
   }
 }
