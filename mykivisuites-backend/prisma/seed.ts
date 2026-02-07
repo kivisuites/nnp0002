@@ -1,8 +1,17 @@
 import "dotenv/config";
 import { PrismaClient, Prisma } from "@prisma/client";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import * as bcrypt from "bcryptjs";
 
-const prisma = new PrismaClient();
+const connectionString =
+	process.env.DATABASE_URL ||
+	"postgresql://postgres:NWHZGiLBKzyIoDkaHMWjceBVQHULLQlR@postgres.railway.internal:5432/railway";
+console.log("Connecting to database...");
+
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
 	const hashedPassword = await bcrypt.hash("admin123", 10);
@@ -38,7 +47,7 @@ async function main() {
 				tenantId: tenant.id,
 				name: "Pcs",
 			},
-		},
+		} as any,
 		update: {},
 		create: {
 			name: "Pcs",
@@ -62,7 +71,7 @@ async function main() {
 					tenantId: tenant.id,
 					code: acc.code,
 				},
-			},
+			} as any,
 			update: {},
 			create: {
 				name: acc.name,
@@ -86,7 +95,7 @@ async function main() {
 					tenantId: tenant.id,
 					email: customer.email,
 				},
-			},
+			} as any,
 			update: {},
 			create: {
 				name: customer.name,
@@ -125,7 +134,7 @@ async function main() {
 					tenantId: tenant.id,
 					sku: product.sku,
 				},
-			},
+			} as any,
 			update: {},
 			create: product,
 		});
@@ -141,4 +150,5 @@ main()
 	})
 	.finally(async () => {
 		await prisma.$disconnect();
+		await pool.end();
 	});
