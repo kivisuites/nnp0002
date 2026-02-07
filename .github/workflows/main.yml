@@ -7,21 +7,24 @@ on:
     branches: ["main"]
   workflow_dispatch:
   schedule:
-    - cron: "30 1 * * *"
+    - cron: "30 1 * * MON-FRI"
 
 jobs:
   check-secrets:
-    name: Check Secrets
+    name: Validate Required Secrets
     runs-on: ubuntu-latest
     outputs:
       railway-token-exists: ${{ steps.check.outputs.railway-token-exists }}
     steps:
-      - id: check
+      - name: Check RAILWAY_TOKEN Secret
+        id: check
         run: |
-          if [ -n "${{ secrets.RAILWAY_TOKEN }}" ]; then
-            echo "railway-token-exists=true" >> $GITHUB_OUTPUT
-          else
+          if [ -z "${{ secrets.RAILWAY_TOKEN }}" ]; then
             echo "railway-token-exists=false" >> $GITHUB_OUTPUT
+            echo "⚠️  WARNING: RAILWAY_TOKEN secret is not configured"
+          else
+            echo "railway-token-exists=true" >> $GITHUB_OUTPUT
+            echo "✅ RAILWAY_TOKEN secret is configured"
           fi
 
   backend-ci:
@@ -56,20 +59,34 @@ jobs:
         run: npm run build
 
       - name: Run tests
+        id: tests
         run: npm run test
-        continue-on-error: true
+        continue-on-error: false
+
+      - name: Test Report
+        if: always()
+        run: |
+          if [ "${{ steps.tests.outcome }}" == "success" ]; then
+            echo "✅ Backend tests passed successfully"
+          else
+            echo "❌ Backend tests failed - blocking artifact creation"
+            exit 1
+          fi
 
       - name: Create Build Artifact
+        if: success()
         run: |
           mkdir -p build-output
-          echo "Backend Build Validated" > build-output/backend-status.txt
+          echo "Backend Build Validated - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" > build-output/backend-status.txt
           cp -r dist build-output/ || true
 
       - name: Upload Backend Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: backend-build
           path: mykivisuites-backend/build-output/
+          retention-days: 5
 
   frontend-ci:
     name: Frontend CI
@@ -99,26 +116,30 @@ jobs:
       - name: Build
         run: npm run build
 
+      - name: Build Report
+        if: success()
+        run: echo "✅ Frontend build completed successfully"
+
       - name: Create Build Artifact
+        if: success()
         run: |
           mkdir -p build-output
-          echo "Frontend Build Validated" > build-output/frontend-status.txt
+          echo "Frontend Build Validated - $(date -u +'%Y-%m-%d %H:%M:%S UTC')" > build-output/frontend-status.txt
           cp -r dist build-output/ || true
 
       - name: Upload Frontend Artifact
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: frontend-build
           path: mykivisuites/build-output/
+          retention-days: 5
 
   deploy-backend-railway:
     name: Deploy Backend to Railway
     runs-on: ubuntu-latest
     needs: [backend-ci, check-secrets]
-    if: |
-      needs.check-secrets.outputs.railway-token-exists == 'true' &&
-      (github.ref == 'refs/heads/backend_railway' || github.ref == 'refs/heads/main') &&
-      github.event_name == 'push'
+    if: (github.ref == 'refs/heads/backend_railway' || github.ref == 'refs/heads/main') && github.event_name == 'push' && needs.check-secrets.outputs.railway-token-exists == 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -131,31 +152,38 @@ jobs:
 
       - name: Verify Backend Artifact
         run: |
-          if [ ! -f downloaded-backend/backend-status.txt ]; then
-            echo "::error::Backend artifact not found or incomplete"
+          if [ -f downloaded-backend/backend-status.txt ]; then
+            echo "✅ Backend artifact verified:"
+            cat downloaded-backend/backend-status.txt
+          else
+            echo "❌ Backend artifact not found"
             exit 1
           fi
-          cat downloaded-backend/backend-status.txt
 
       - name: Deploy to Railway
+        id: deploy
         run: |
           npm i -g @railway/cli
           railway up --service mykivisuites-backend --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
-      - name: Deployment Status
-        if: always()
-        run: echo "::notice::Backend deployment completed. Check Railway dashboard for status."
+      - name: Deployment Report
+        if: success()
+        run: echo "✅ Backend successfully deployed to Railway at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: Deployment Failure Notice
+        if: failure()
+        run: |
+          echo "❌ Backend deployment failed"
+          echo "Check Railway dashboard for details"
+          exit 1
 
   deploy-frontend-railway:
     name: Deploy Frontend to Railway
     runs-on: ubuntu-latest
     needs: [frontend-ci, check-secrets]
-    if: |
-      needs.check-secrets.outputs.railway-token-exists == 'true' &&
-      (github.ref == 'refs/heads/frontend_railway' || github.ref == 'refs/heads/main') &&
-      github.event_name == 'push'
+    if: (github.ref == 'refs/heads/frontend_railway' || github.ref == 'refs/heads/main') && github.event_name == 'push' && needs.check-secrets.outputs.railway-token-exists == 'true'
 
     steps:
       - uses: actions/checkout@v4
@@ -168,24 +196,34 @@ jobs:
 
       - name: Verify Frontend Artifact
         run: |
-          if [ ! -f downloaded-frontend/frontend-status.txt ]; then
-            echo "::error::Frontend artifact not found or incomplete"
+          if [ -f downloaded-frontend/frontend-status.txt ]; then
+            echo "✅ Frontend artifact verified:"
+            cat downloaded-frontend/frontend-status.txt
+          else
+            echo "❌ Frontend artifact not found"
             exit 1
           fi
-          cat downloaded-frontend/frontend-status.txt
 
       - name: Deploy to Railway
+        id: deploy
         run: |
           npm i -g @railway/cli
           railway up --service mykivisuites --detach
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          VITE_API_URL: ${{ secrets.VITE_API_URL || 'http://localhost:3001/api' }}
+          VITE_API_URL: ${{ secrets.VITE_API_URL || format('https://{0}.railway.app/api', github.repository_owner) }}
           PORT: "3000"
 
-      - name: Deployment Status
-        if: always()
-        run: echo "::notice::Frontend deployment completed. Check Railway dashboard for status."
+      - name: Deployment Report
+        if: success()
+        run: echo "✅ Frontend successfully deployed to Railway at $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+
+      - name: Deployment Failure Notice
+        if: failure()
+        run: |
+          echo "❌ Frontend deployment failed"
+          echo "Check Railway dashboard for details"
+          exit 1
 
   maintenance:
     name: Close Stale Issues
