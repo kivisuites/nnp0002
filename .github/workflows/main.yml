@@ -212,7 +212,6 @@ jobs:
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || format('https://{0}.railway.app/api', github.repository_owner) }}
-          PORT: "3000"
 
       - name: Deployment Report
         if: success()
