@@ -164,7 +164,7 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway up --service mykivisuites-backend --detach
+          railway up --service mykivisuites-backend --detach --path mykivisuites-backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -208,7 +208,7 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway up --service mykivisuites --detach
+          railway up --service mykivisuites --detach --path mykivisuites
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || format('https://{0}.railway.app/api', github.repository_owner) }}
@@ -223,6 +223,34 @@ jobs:
           echo "❌ Frontend deployment failed"
           echo "Check Railway dashboard for details"
           exit 1
+
+  deploy-postgres-railway:
+    name: Deploy Postgres to Railway
+    runs-on: ubuntu-latest
+    needs: [check-secrets]
+    if: (github.ref == 'refs/heads/main') && github.event_name == 'push' && needs.check-secrets.outputs.railway-token-exists == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Railway
+        run: |
+          npm i -g @railway/cli
+          railway up --service postgres --detach --path postgres
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-gateway-railway:
+    name: Deploy Gateway (NPM) to Railway
+    runs-on: ubuntu-latest
+    needs: [deploy-frontend-railway, deploy-backend-railway]
+    if: (github.ref == 'refs/heads/main') && github.event_name == 'push' && needs.check-secrets.outputs.railway-token-exists == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy to Railway
+        run: |
+          npm i -g @railway/cli
+          railway up --service nginx --detach --path nginx
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
   maintenance:
     name: Close Stale Issues
