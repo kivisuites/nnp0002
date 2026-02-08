@@ -164,8 +164,8 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway service || true
-          railway up --service mykivisuites-backend --detach mykivisuites-backend || railway up --service backend --detach mykivisuites-backend
+          railway status || true
+          cd mykivisuites-backend && (railway up --service mykivisuites-backend --detach || railway up --service backend --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -209,8 +209,8 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway service || true
-          railway up --service mykivisuites --detach mykivisuites || railway up --service frontend --detach mykivisuites
+          railway status || true
+          cd mykivisuites && (railway up --service mykivisuites --detach || railway up --service frontend --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || format('https://{0}.railway.app/api', github.repository_owner) }}
@@ -236,7 +236,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          railway service || true
+          railway status || true
           cd postgres && (railway up --service postgres --detach || railway up --service database --detach || railway up --service db --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
@@ -251,7 +251,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          railway service || true
+          railway status || true
           cd nginx && (railway up --service nginx --detach || railway up --service gateway --detach || railway up --service proxy --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
