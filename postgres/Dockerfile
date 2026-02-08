@@ -8,8 +8,8 @@ ENV POSTGRES_DB=kivisuites
 # Expose the default Postgres port
 EXPOSE 5432
 
-# Use a volume for persistence
-VOLUME /var/lib/postgresql/data
+# Railway volumes should be configured in the Railway dashboard/config
+# rather than using the VOLUME keyword in Dockerfile
 
 # Add a healthcheck to ensure the database is ready
 HEALTHCHECK --interval=10s --timeout=5s --retries=5 \

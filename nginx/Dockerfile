@@ -9,5 +9,5 @@ ENV LISTEN_PORT="81"
 # NPM uses LISTEN_PORT for admin UI, HTTP_PORT for HTTP, HTTPS_PORT for HTTPS
 EXPOSE 81 80 443
 
-# NPM expects volumes for data and letsencrypt
-VOLUME /config
+# Railway volumes should be configured in the Railway dashboard/config
+# rather than using the VOLUME keyword in Dockerfile
