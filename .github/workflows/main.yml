@@ -164,7 +164,7 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway up --service mykivisuites-backend --detach --path mykivisuites-backend
+          railway up --service mykivisuites-backend --detach mykivisuites-backend
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -208,7 +208,7 @@ jobs:
         id: deploy
         run: |
           npm i -g @railway/cli
-          railway up --service mykivisuites --detach --path mykivisuites
+          railway up --service mykivisuites --detach mykivisuites
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           VITE_API_URL: ${{ secrets.VITE_API_URL || format('https://{0}.railway.app/api', github.repository_owner) }}
@@ -234,7 +234,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          railway up --service postgres --detach --path postgres
+          railway up --service postgres --detach postgres
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -248,7 +248,7 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          railway up --service nginx --detach --path nginx
+          railway up --service nginx --detach nginx
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
