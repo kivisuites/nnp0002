@@ -234,7 +234,8 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          cd postgres && railway up --service postgres --detach
+          railway service || true
+          cd postgres && (railway up --service postgres --detach || railway up --service database --detach || railway up --service db --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
@@ -248,7 +249,8 @@ jobs:
       - name: Deploy to Railway
         run: |
           npm i -g @railway/cli
-          cd nginx && railway up --service nginx --detach
+          railway service || true
+          cd nginx && (railway up --service nginx --detach || railway up --service gateway --detach || railway up --service proxy --detach)
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
